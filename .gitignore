@@ -1,4 +1,11 @@
 *.py[cod]
+*.flv
+*.mp4
+*.json
+*.~lock*
+.settings
+.project
+.pydevproject
 
 # C extensions
 *.so
