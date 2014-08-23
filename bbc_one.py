@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: iso-8859-15 -*-
 
+import datetime
+
 from httpclient import HttpClient
 
 from json import loads,dumps
@@ -89,7 +91,7 @@ def rtmpdump(params):
     cmd = 'rtmpdump'
     for key in params.keys():
         cmd += ' --'+key+'="'+params[key]+'"'
-    cmd += ' -o "'+config['title']+'.mp4"'
+    cmd += ' -o "'+config['title']+' '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+'.mp4"'
     return cmd 
 
 #
