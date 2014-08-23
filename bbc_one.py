@@ -3,8 +3,7 @@
 
 from httpclient import HttpClient
 
-from json import loads as importJSON
-from json import dumps as exportJSON
+from json import loads,dumps
 
 from subprocess import Popen
 from shlex import split
@@ -14,8 +13,30 @@ from shlex import split
 # retrieve RTMP streaming properties (JSON)
 #
 channel = '14'
-quality = 'low'
+quality = 'high'
+
+website = 'http://www.filmon.com/tv/bbc-one'
+fallback_player = 'http://www.filmon.com/tv/modules/FilmOnTV/files/flashapp/filmon/FilmonPlayer.swf?v=56'
+
 client = HttpClient(debug=True)
+
+# Extract URL to FilmOn player
+client.GET(website)
+page = str(client.Page)
+key = '{"streamer":"'
+i = page.find(key)
+if i > -1:
+    j = page.find('"',i+len(key))
+    player = page[i+len(key):j].replace('\\/','/')
+    if player.find('.swf') > -1:
+        player = 'http://www.filmon.com'+player
+    else:
+        player = fallback_player
+else:
+    player = fallback_player
+print 'Player: '+player
+
+# Get channel info
 client.GET('http://www.filmon.com/index/popout?channel_id='+channel+'&quality='+quality)
 client.POST(
             '/ajax/getChannelInfo',
@@ -30,34 +51,45 @@ client.POST(
              'DNT':             '1'
              }
             )
+reply = str(client.Page)
+print ''
 
 #
 # Parse the channel list (JSON) and
 # finde the RTMP settings for BBC One
 #
 
-config = importJSON( str(client.Page) )[0]
-open(config['alias']+' '+quality+'.json','w').write( exportJSON(config, sort_keys=True, indent=4) );
-print 'Channel: '+config['title']
-print 'URL:     '+config['serverURL']
-print 'Stream:  '+config['streamName']
+open(str(channel)+' '+quality+'.raw.json','w').write( reply )
+config = loads(reply)
+open(config['alias']+' '+quality+'.formatted.json','w').write( dumps(config, sort_keys=True, indent=4) )
+print 'Channel:     '+config['title']
+print 'URL:         '+config['serverURL']
 
 #
 # Setup custom RTMP handler with the parsed RTMP properties
 #
+i = config['serverURL'].find('/',8)
+host = config['serverURL'][len('rtmp://'):i]
+app = config['serverURL'][i+1:]
+print 'Host:        '+host
+print 'App:         '+app
+print 'Playpath:    '+config['streamName']
 rtmp_config = {
-          'pageUrl':    'http://www.filmon.com/tv/bbc-one',
-          'swfUrl':     'http://www.filmon.com/tv/modules/FilmOnTV/files/fla.shapp/filmon/FilmonPlayer.swf?v=28',
+          'pageUrl':    website,
+          'swfUrl':     player,
           'flashVer':   'LNX 11,1,102,55',
-          'rtmp':       config['serverURL'],
+          'protocol':   '0',
+          'host':       host,
+          'app':        app,
           'playpath':   config['streamName']
           }
+print ''
 
-def rtmpdump(config):
+def rtmpdump(params):
     cmd = 'rtmpdump'
-    for key in config.keys():
-        cmd += ' --'+key+'="'+config[key]+'"'
-    cmd += ' --live -o stream.mp4'
+    for key in params.keys():
+        cmd += ' --'+key+'="'+params[key]+'"'
+    cmd += ' -o "'+config['title']+'.mp4"'
     return cmd 
 
 #

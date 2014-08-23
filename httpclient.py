@@ -31,7 +31,7 @@ class HttpClient:
         self.ConnectionTimeout = 3 # seconds
         self.Protocol = HTTP
         self.Host = "localhost"
-        self.Agent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+        self.Agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36"
         self.SendReferer = True
         self.Site = "/"
         self.SendCookies = True
